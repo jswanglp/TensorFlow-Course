@@ -9,12 +9,12 @@ import os
 ######################################
 
 tf.app.flags.DEFINE_string(
-    'train_root', os.path.dirname(os.path.abspath(__file__)) + '/train_logs',
+    'train_root', os.path.dirname(os.path.abspath(__file__)) + r'\train_logs',
     'Directory where event logs are written to.')
 
 tf.app.flags.DEFINE_string(
     'checkpoint_root',
-    os.path.dirname(os.path.abspath(__file__)) + '/checkpoints',
+    os.path.dirname(os.path.abspath(__file__)) + r'\checkpoints',
     'Directory where checkpoints are written to.')
 
 tf.app.flags.DEFINE_integer('max_num_checkpoint', 10,
@@ -23,7 +23,7 @@ tf.app.flags.DEFINE_integer('max_num_checkpoint', 10,
 tf.app.flags.DEFINE_integer('num_classes', 10,
                             'Number of model clones to deploy.')
 
-tf.app.flags.DEFINE_integer('batch_size', np.power(2, 7),
+tf.app.flags.DEFINE_integer('batch_size', int(np.power(2, 7)),
                             'Number of model clones to deploy.')
 
 tf.app.flags.DEFINE_integer('num_epochs', 5,

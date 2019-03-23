@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import tempfile
 import urllib
-import pandas as pd
+# import pandas as pd
 import os
 from tensorflow.examples.tutorials.mnist import input_data
 
@@ -12,12 +12,12 @@ from tensorflow.examples.tutorials.mnist import input_data
 ######################################
 
 tf.app.flags.DEFINE_string(
-    'train_path', os.path.dirname(os.path.abspath(__file__)) + '/train_logs',
+    'train_path', os.path.dirname(os.path.abspath(__file__)) + r'\train_logs',
     'Directory where event logs are written to.')
 
 tf.app.flags.DEFINE_string(
     'checkpoint_path',
-    os.path.dirname(os.path.abspath(__file__)) + '/checkpoints',
+    os.path.dirname(os.path.abspath(__file__)) + r'\checkpoints',
     'Directory where checkpoints are written to.')
 
 tf.app.flags.DEFINE_integer('max_num_checkpoint', 10,
@@ -26,10 +26,10 @@ tf.app.flags.DEFINE_integer('max_num_checkpoint', 10,
 tf.app.flags.DEFINE_integer('num_classes', 2,
                             'Number of model clones to deploy.')
 
-tf.app.flags.DEFINE_integer('batch_size', np.power(2, 9),
+tf.app.flags.DEFINE_integer('batch_size', 256,
                             'Number of model clones to deploy.')
 
-tf.app.flags.DEFINE_integer('num_epochs', 10,
+tf.app.flags.DEFINE_integer('num_epochs', 50,
                             'Number of epochs for training.')
 
 ##########################################

@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import xlrd
+# import xlrd
 import matplotlib.pyplot as plt
 import os
 from sklearn.utils import check_random_state
@@ -75,19 +75,25 @@ with tf.Session() as sess:
 
     # Return the train loss and create the train_op.
     train_loss = loss(X, Y)
+    train_loss_sum = tf.summary.scalar('train_loss', train_loss)
     train_op = train(train_loss)
+    writer = tf.summary.FileWriter(r'E:\Anaconda2\Programs\Tensorboard', sess.graph)
+
 
     # Step 8: train the model
     for epoch_num in range(FLAGS.num_epochs): # run 100 epochs
-        loss_value, _ = sess.run([train_loss,train_op],
+        loss_value, _, rs = sess.run([train_loss,train_op,train_loss_sum],
                                  feed_dict={X: data[:,0], Y: data[:,1]})
+        # sess.run(train_loss_sum)
+        writer.add_summary(rs, epoch_num)
 
         # Displaying the loss per epoch.
-        print('epoch %d, loss=%f' %(epoch_num+1, loss_value))
+        print('epoch %d, loss=%.2f' %(epoch_num+1, loss_value))
 
         # save the values of weight and bias
         wcoeff, bias = sess.run([W, b])
-
+sess.close()
+writer.close()
 
 ###############################
 #### Evaluate and plot ########
@@ -96,9 +102,12 @@ Input_values = data[:,0]
 Labels = data[:,1]
 Prediction_values = data[:,0] * wcoeff + bias
 
-# # uncomment if plotting is desired!
-# plt.plot(Input_values, Labels, 'ro', label='main')
-# plt.plot(Input_values, Prediction_values, label='Predicted')
+# uncomment if plotting is desired!
+plt.figure()
+plt.plot(Input_values, Labels, 'ro', label='main')
+plt.plot(Input_values, Prediction_values, label='Predicted')
+plt.legend()
+plt.show()
 
 # # Saving the result.
 # plt.legend()
