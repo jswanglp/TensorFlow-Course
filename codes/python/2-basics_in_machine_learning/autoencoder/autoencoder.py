@@ -1,35 +1,40 @@
-#@title Autoencoder { display-mode: "both" }
-# ex-2_3 autoencoder
-# conding: utf-8
+""" Auto Encoder Example.
+
+Build a 2 layers auto-encoder with TensorFlow to compress images to a
+lower latent space and then reconstruct them.
+
+References:
+    Y. LeCun, L. Bottou, Y. Bengio, and P. Haffner. "Gradient-based
+    learning applied to document recognition." Proceedings of the IEEE,
+    86(11):2278-2324, November 1998.
+
+Links:
+    [MNIST Dataset] http://yann.lecun.com/exdb/mnist/
+
+Author: Aymeric Damien
+Project: https://github.com/aymericdamien/TensorFlow-Examples/
+"""
 from __future__ import division, print_function, absolute_import
 
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import time
-import cv2, os
-
-tf.logging.set_verbosity(tf.logging.ERROR)
 
 # Import MNIST data
 from tensorflow.examples.tutorials.mnist import input_data
-path_data = '/MNIST_data' #@param {type: "string"}
-# path_data = r'E:\Anaconda2\Programs\MNIST_data'
-mnist = input_data.read_data_sets(path_data, one_hot=True)
+mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
 
 # Training Parameters
-learning_rate = 0.003 #@param {type: "number"}
-num_steps = 5000 #@param {type: "integer"}
-batch_size = 48 #@param {type: "integer"}
+learning_rate = 0.01
+num_steps = 30000
+batch_size = 256
 
 display_step = 1000
 examples_to_show = 10
 
 # Network Parameters
-num_hidden_1 = 128 #@param {type: "integer"}
-num_hidden_2 = 100 #@param {type: "integer"}
-num_sq = int(np.sqrt(num_hidden_2))
+num_hidden_1 = 256 # 1st layer num features
+num_hidden_2 = 128 # 2nd layer num features (the latent dim)
 num_input = 784 # MNIST data input (img shape: 28*28)
 
 # tf Graph input (only pictures)
@@ -80,7 +85,7 @@ y_true = X
 
 # Define loss and optimizer, minimize the squared error
 loss = tf.reduce_mean(tf.pow(y_true - y_pred, 2))
-optimizer = tf.train.AdamOptimizer(learning_rate).minimize(loss)
+optimizer = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
 
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
@@ -93,7 +98,6 @@ with tf.Session() as sess:
     sess.run(init)
 
     # Training
-    start_time = time.time()
     for i in range(1, num_steps+1):
         # Prepare Data
         # Get the next batch of MNIST data (only images are needed, not labels)
@@ -102,26 +106,20 @@ with tf.Session() as sess:
         # Run optimization op (backprop) and cost op (to get loss value)
         _, l = sess.run([optimizer, loss], feed_dict={X: batch_x})
         # Display logs per step
-        if i % display_step == 0:
-            end_time = time.time()
-            running_time = end_time - start_time
-            start_time = end_time
-            print('Step %i: Minibatch Loss: %f, ' % (i, l) + 'running time: {0:.2f}s.'.format(running_time))
+        if i % display_step == 0 or i == 1:
+            print('Step %i: Minibatch Loss: %f' % (i, l))
 
     # Testing
     # Encode and decode images from test set and visualize their reconstruction.
     n = 4
     canvas_orig = np.empty((28 * n, 28 * n))
     canvas_recon = np.empty((28 * n, 28 * n))
-    img_features = np.empty((n * n, num_sq, num_sq))
     for i in range(n):
         # MNIST test set
         batch_x, _ = mnist.test.next_batch(n)
         # Encode and decode the digit image
-        f, g = sess.run([encoder_op, decoder_op], feed_dict={X: batch_x})
-        # Display image features
-        for j in range(n):
-            img_features[i * n + j] = f[j].reshape([num_sq, num_sq])
+        g = sess.run(decoder_op, feed_dict={X: batch_x})
+
         # Display original images
         for j in range(n):
             # Draw the original digits
@@ -133,46 +131,12 @@ with tf.Session() as sess:
             canvas_recon[i * 28:(i + 1) * 28, j * 28:(j + 1) * 28] = \
                 g[j].reshape([28, 28])
 
-    # 16 张 mnist 图像，及重建后的图像
-    fig = plt.figure(1, figsize=(10, 5))
-    image_names = ["Original Images", "Reconstructed Images"]
-    images_o_r = [canvas_orig, canvas_recon]
-    AX = [fig.add_subplot(i) for i in range(121, 123)]
-    for na, img, ax in zip(image_names, images_o_r, AX):
-        ax.imshow(img, origin="upper", cmap="gray")
-        ax.set_title(na)
-        ax.set_xticks([]), ax.set_yticks([])
-        ax.grid()
+    print("Original Images")
+    plt.figure(figsize=(n, n))
+    plt.imshow(canvas_orig, origin="upper", cmap="gray")
     plt.show()
 
-    # 对应的 16 张特征（encode）图
-    fig_f = plt.figure(2, figsize=(5, 5))
-    G = gridspec.GridSpec(n, n)
-    G.wspace, G.hspace = 0.05, 0.05
-    for i in range(n):
-        for j in range(n):
-            plt.subplot(G[i, j])
-            plt.imshow(img_features[i * n + j], cmap='gray')
-            plt.xticks([]), plt.yticks([])
-
+    print("Reconstructed Images")
+    plt.figure(figsize=(n, n))
+    plt.imshow(canvas_recon, origin="upper", cmap="gray")
     plt.show()
-    
-    file_path = os.path.dirname(os.path.abspath(__file__))
-    path_test = os.path.join(file_path, 'number2.jpg')
-    
-    img_test = cv2.imread(path_test, cv2.IMREAD_GRAYSCALE)
-    img_re = cv2.resize(img_test, dsize=(28, 28), interpolation=cv2.INTER_LINEAR)
-    img_t = (255 - img_re.reshape(1,-1)) / 255
-    img_enco, img_deco = sess.run([encoder_op, decoder_op], feed_dict={X: img_t})
-    fig = plt.figure(3, figsize=(10, 5))
-    image_names = ["Original Images", "Reconstructed Images"]
-    images_o_r = [img_re, 255 - img_deco.reshape(28, 28)]
-    AX = [fig.add_subplot(i) for i in range(121, 123)]
-    for na, img, ax in zip(image_names, images_o_r, AX):
-        ax.imshow(img, origin="upper", cmap="gray")
-        ax.set_title(na)
-        ax.set_xticks([]), ax.set_yticks([])
-        ax.grid()
-    plt.show()
-    
-sess.close()
